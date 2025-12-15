@@ -4,7 +4,7 @@ import tailwindcss from '@tailwindcss/vite'
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  base: '/CQRDN/', // GitHub Pages repo path (https://gwendalproust4-design.github.io/CQRDN/)
+  base: './', // Relative base works on any subpath including GitHub Pages
   plugins: [
     react(),
     tailwindcss(),
