@@ -176,9 +176,22 @@ function PageAventure({ onGoToInventory, isAdmin }) {
   useEffect(() => { fetchImages(); }, []);
 
   const updateImage = async (key, file) => {
-    const fileName = `site-${key}-${Math.random().toString(36).substring(2)}.${file.name.split('.').pop()}`;
+    // --- NETTOYAGE DU NOM DE FICHIER ---
+    // 1. On récupère l'extension (ex: 'jpg')
+    const fileExt = file.name.split('.').pop();
+    // 2. On nettoie le nom :
+    // - .normalize('NFD').replace(/[\u0300-\u036f]/g, "") : Supprime les accents (é -> e)
+    // - .replace(/[^a-zA-Z0-9]/g, '-') : Remplace tout ce qui n'est pas lettre/chiffre par un tiret
+    const cleanFileName = file.name.split('.').slice(0, -1).join('.')
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
+
+    // 3. On crée un nom final unique et propre (ex: 'site-aventure-intro-a1b2c3d4.jpg')
+    const fileName = `site-${key}-${cleanFileName}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+    // -----------------------------------
+
     const { error: upErr } = await supabase.storage.from('images-objets').upload(fileName, file);
-    if (upErr) throw upErr;
+    if (upErr) throw upErr; // L'erreur devrait disparaître ici
     const { data: { publicUrl } } = supabase.storage.from('images-objets').getPublicUrl(fileName);
     const { error: dbErr } = await supabase.from('site_content').upsert({ key, image_url: publicUrl });
     if (dbErr) throw dbErr;
