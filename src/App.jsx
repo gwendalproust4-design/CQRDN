@@ -2,6 +2,16 @@ import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from './supabaseClient';
 import Campfire3D from './Campfire3D';
 
+// Wrap Supabase calls with error handling
+const safeSupabaseCall = async (fn) => {
+  try {
+    return await fn();
+  } catch (error) {
+    console.error('Supabase error (continuing anyway):', error);
+    return { data: null, error };
+  }
+};
+
 // --- CONFIGURATION ---
 const PAYPAL_ME_USER = "CQRDN";
 const DISCORD_LINK = "https://discord.gg/q3fkRmHmZu";
@@ -156,7 +166,7 @@ function PageAventure({ onGoToInventory, isAdmin }) {
   const [images, setImages] = useState({});
 
   const fetchImages = async () => {
-    const { data } = await supabase.from('site_content').select('*');
+    const { data } = await safeSupabaseCall(() => supabase.from('site_content').select('*'));
     if (data) {
       const imgMap = {};
       data.forEach(item => imgMap[item.key] = item.image_url);
@@ -363,7 +373,7 @@ function PageAbout({ onBack, isAdmin }) {
   const [editingMember, setEditingMember] = useState(null);
 
   const fetchMembers = async () => {
-    const { data } = await supabase.from('team_members').select('*').order('id').limit(2);
+    const { data } = await safeSupabaseCall(() => supabase.from('team_members').select('*').order('id').limit(2));
     if (data) setMembers(data);
   };
   useEffect(() => { fetchMembers(); }, []);
