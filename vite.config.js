@@ -4,7 +4,7 @@ import tailwindcss from '@tailwindcss/vite'
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  base: '/CQRDN/',
+  base: './', // <--- METTEZ CECI (point slash) au lieu du nom du dépôt
   plugins: [
     react(),
     tailwindcss(),
