@@ -1,4 +1,4 @@
-name: Deploy to GitHub Pages
+name: Deploy to Netlify
 
 on:
   push:
@@ -8,13 +8,6 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      pages: write
-      id-token: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -22,9 +15,13 @@ jobs:
           node-version: '20'
       - run: npm ci
       - run: npm run build
-      - uses: actions/configure-pages@v4
-      - uses: actions/upload-pages-artifact@v3
+      - uses: nwtgck/actions-netlify@v2.0
         with:
-          path: dist
-      - id: deployment
-        uses: actions/deploy-pages@v4
+          publish-dir: './dist'
+          production-branch: main
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          deploy-message: "Deploy from GitHub Actions"
+        env:
+          NETLIFY_AUTH_TOKEN: nfp_iLZ5ND8TgVPYdB64wGMEFkc4qNb9Xkef87f4
+          NETLIFY_SITE_ID: efe6e8e8-7dd9-4b3e-9b03-35e8fd323c6f
+        timeout-minutes: 1
