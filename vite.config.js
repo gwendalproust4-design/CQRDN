@@ -4,7 +4,7 @@ import tailwindcss from '@tailwindcss/vite'
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  base: './', // <--- METTEZ CECI (point slash) au lieu du nom du dépôt
+  base: './', // Relative base ensures the built app can be served from any static host
   plugins: [
     react(),
     tailwindcss(),
