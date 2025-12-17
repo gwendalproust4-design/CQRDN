@@ -2,16 +2,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from './supabaseClient';
 import Campfire3D from './Campfire3D';
 
-// Wrap Supabase calls with error handling
-const safeSupabaseCall = async (fn) => {
-  try {
-    return await fn();
-  } catch (error) {
-    console.error('Supabase error (continuing anyway):', error);
-    return { data: null, error };
-  }
-};
-
 // --- CONFIGURATION ---
 const PAYPAL_ME_USER = "CQRDN";
 const DISCORD_LINK = "https://discord.gg/q3fkRmHmZu";
@@ -53,38 +43,6 @@ const EditableImage = ({ src, alt, className, onUpload, isAdmin }) => {
   );
 };
 
-// --- FONCTION EFFET SPRAY (Création des particules) ---
-// --- FONCTION EFFET SPRAY (VERSION TRAITS SOBRES) ---
-// --- FONCTION EFFET SPRAY (VERSION SOBRE / DÉTAIL) ---
-const createSprayEffect = (e) => {
-  const particleCount = 6; // Seulement 6 petits traits
-
-  for (let i = 0; i < particleCount; i++) {
-    const particle = document.createElement('div');
-    particle.classList.add('spray-particle');
-
-    particle.style.left = `${e.clientX}px`;
-    particle.style.top = `${e.clientY}px`;
-
-    const angle = Math.random() * Math.PI * 2;
-
-    // Distance très courte (10px à 25px max) -> Reste près de la souris
-    const dist = 10 + Math.random() * 15;
-
-    // Trait court (4px à 8px)
-    const length = 4 + Math.random() * 4;
-
-    particle.style.setProperty('--angle', `${angle}rad`);
-    particle.style.setProperty('--dist', `${dist}px`);
-    particle.style.setProperty('--length', `${length}px`);
-
-    document.body.appendChild(particle);
-
-    setTimeout(() => {
-      particle.remove();
-    }, 300); // Disparaît très vite (0.3s)
-  }
-};
 // --- COMPOSANT : TEXTE DÉCRYPTAGE (Hacker Effect) ---
 const HackerText = ({ text, className = "" }) => {
   const [display, setDisplay] = useState(text);
@@ -105,11 +63,11 @@ const HackerText = ({ text, className = "" }) => {
       );
 
       if (iterations >= text.length) clearInterval(interval);
-      iterations += 1 / 2; // Vitesse de décryptage
+      iterations += 1 / 2;
     }, 30);
 
     return () => clearInterval(interval);
-  }, [text, hovered]); // Rejoue l'effet au survol
+  }, [text, hovered]);
 
   return (
     <span
@@ -124,28 +82,22 @@ const HackerText = ({ text, className = "" }) => {
 // --- COMPOSANT : IMAGE DRONE HUD ---
 const DroneImage = ({ src, alt, className = "", children }) => (
   <div className={`relative group overflow-hidden border border-survie-khaki/30 ${className}`}>
-    {/* Image de fond */}
     <div className="absolute inset-0 bg-survie-khaki/10 z-10 pointer-events-none mix-blend-overlay"></div>
     <img src={src} alt={alt} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 grayscale group-hover:grayscale-0" />
 
-    {/* HUD Overlay (Viseur) */}
     <div className="absolute inset-0 z-20 pointer-events-none border-[1px] border-transparent group-hover:border-survie-khaki/50 transition-colors duration-500">
-      {/* Coins */}
       <div className="absolute top-2 left-2 w-4 h-4 border-t-2 border-l-2 border-survie-khaki"></div>
       <div className="absolute top-2 right-2 w-4 h-4 border-t-2 border-r-2 border-survie-khaki"></div>
       <div className="absolute bottom-2 left-2 w-4 h-4 border-b-2 border-l-2 border-survie-khaki"></div>
       <div className="absolute bottom-2 right-2 w-4 h-4 border-b-2 border-r-2 border-survie-khaki"></div>
 
-      {/* Scanline */}
       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-survie-khaki/10 to-transparent h-[10px] w-full animate-scan"></div>
 
-      {/* Info Tactique */}
       <div className="absolute top-3 right-4 text-[9px] font-mono text-survie-khaki flex items-center gap-2">
         <span className="animate-pulse">● REC</span>
         <span>[LIVE FEED]</span>
       </div>
 
-      {/* Centreur (Crosshair) qui apparaît au survol */}
       <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
         <svg className="w-12 h-12 text-survie-khaki/80" viewBox="0 0 100 100" fill="none" stroke="currentColor" strokeWidth="1">
           <circle cx="50" cy="50" r="20" />
@@ -154,19 +106,43 @@ const DroneImage = ({ src, alt, className = "", children }) => (
         </svg>
       </div>
     </div>
-
-    {/* Enfants (Bouton d'upload admin par ex) */}
     {children}
   </div>
 );
 
-// --- PAGE AVENTURE ---
-// --- PAGE AVENTURE (VERSION TACTICAL BRIEFING) ---
+// --- FONCTION EFFET SPRAY (VERSION SOBRE / DÉTAIL) ---
+const createSprayEffect = (e) => {
+  const particleCount = 6;
+
+  for (let i = 0; i < particleCount; i++) {
+    const particle = document.createElement('div');
+    particle.classList.add('spray-particle');
+
+    particle.style.left = `${e.clientX}px`;
+    particle.style.top = `${e.clientY}px`;
+
+    const angle = Math.random() * Math.PI * 2;
+    const dist = 10 + Math.random() * 15;
+    const length = 4 + Math.random() * 4;
+
+    particle.style.setProperty('--angle', `${angle}rad`);
+    particle.style.setProperty('--dist', `${dist}px`);
+    particle.style.setProperty('--length', `${length}px`);
+
+    document.body.appendChild(particle);
+
+    setTimeout(() => {
+      particle.remove();
+    }, 300);
+  }
+};
+
+// --- PAGE AVENTURE (VERSION TACTICAL) ---
 function PageAventure({ onGoToInventory, isAdmin }) {
   const [images, setImages] = useState({});
 
   const fetchImages = async () => {
-    const { data } = await safeSupabaseCall(() => supabase.from('site_content').select('*'));
+    const { data } = await supabase.from('site_content').select('*');
     if (data) {
       const imgMap = {};
       data.forEach(item => imgMap[item.key] = item.image_url);
@@ -176,22 +152,14 @@ function PageAventure({ onGoToInventory, isAdmin }) {
   useEffect(() => { fetchImages(); }, []);
 
   const updateImage = async (key, file) => {
-    // --- NETTOYAGE DU NOM DE FICHIER ---
-    // 1. On récupère l'extension (ex: 'jpg')
     const fileExt = file.name.split('.').pop();
-    // 2. On nettoie le nom :
-    // - .normalize('NFD').replace(/[\u0300-\u036f]/g, "") : Supprime les accents (é -> e)
-    // - .replace(/[^a-zA-Z0-9]/g, '-') : Remplace tout ce qui n'est pas lettre/chiffre par un tiret
     const cleanFileName = file.name.split('.').slice(0, -1).join('.')
       .normalize('NFD').replace(/[\u0300-\u036f]/g, "")
       .replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
-
-    // 3. On crée un nom final unique et propre (ex: 'site-aventure-intro-a1b2c3d4.jpg')
     const fileName = `site-${key}-${cleanFileName}-${Math.random().toString(36).substring(2)}.${fileExt}`;
-    // -----------------------------------
 
     const { error: upErr } = await supabase.storage.from('images-objets').upload(fileName, file);
-    if (upErr) throw upErr; // L'erreur devrait disparaître ici
+    if (upErr) throw upErr;
     const { data: { publicUrl } } = supabase.storage.from('images-objets').getPublicUrl(fileName);
     const { error: dbErr } = await supabase.from('site_content').upsert({ key, image_url: publicUrl });
     if (dbErr) throw dbErr;
@@ -243,14 +211,12 @@ function PageAventure({ onGoToInventory, isAdmin }) {
             </p>
           </div>
 
-          {/* IMAGE DRONE 1 */}
           <div className="order-1 md:order-2 h-64 w-full relative">
             <DroneImage
               src={images['aventure_intro'] || "https://images.unsplash.com/photo-1518390264023-faabcd39634e?auto=format&fit=crop&q=80"}
               alt="Intro"
               className="w-full h-full"
             >
-              {/* UPLOAD ADMIN CACHÉ MAIS ACCESSIBLE */}
               {isAdmin && (
                 <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 z-50 pointer-events-auto">
                   <EditableImage
@@ -299,9 +265,8 @@ function PageAventure({ onGoToInventory, isAdmin }) {
           </div>
         </div>
 
-        {/* SECTION 3 : LE 3EME SURVIVANT (ENCADRÉ TACTIQUE) */}
+        {/* SECTION 3 : RÔLES */}
         <div className="border border-survie-khaki/30 bg-survie-card/20 p-8 relative">
-          {/* Décors aux coins */}
           <div className="absolute top-0 left-0 w-4 h-4 border-t border-l border-survie-khaki"></div>
           <div className="absolute top-0 right-0 w-4 h-4 border-t border-r border-survie-khaki"></div>
           <div className="absolute bottom-0 left-0 w-4 h-4 border-b border-l border-survie-khaki"></div>
@@ -343,13 +308,12 @@ function PageAventure({ onGoToInventory, isAdmin }) {
 
 // --- NOUVEAU COMPOSANT : CARTE MEMBRE (Smart Display) ---
 function MemberCard({ member, align, isAdmin, onEdit, onDelete }) {
-  // Sur mobile/tablette (< 1024px), on cache les infos par défaut
   const [showInfo, setShowInfo] = useState(false);
 
   return (
     <div
       className={`pointer-events-auto transform transition-all duration-300 md:w-80 relative group z-10 ${align === 'right' ? 'text-right' : 'text-left'}`}
-      onClick={() => setShowInfo(!showInfo)} // Click to toggle on mobile
+      onClick={() => setShowInfo(!showInfo)}
     >
       {isAdmin && (
         <div className={`absolute -top-8 ${align === 'right' ? 'right-0' : 'left-0'} flex gap-2 z-30`}>
@@ -358,18 +322,14 @@ function MemberCard({ member, align, isAdmin, onEdit, onDelete }) {
         </div>
       )}
 
-      {/* AVATAR (Toujours visible) */}
       <div className={`w-20 h-20 md:w-24 md:h-24 rounded-full overflow-hidden border-2 border-orange-500/50 shadow-[0_0_20px_rgba(255,100,0,0.3)] relative mx-auto lg:mx-0 ${align === 'right' ? 'lg:ml-auto' : 'lg:mr-auto'} transition-all duration-500 cursor-pointer ${showInfo ? 'scale-110 border-orange-500 ring-2 ring-orange-500/30' : 'grayscale opacity-90 lg:hover:grayscale-0 lg:hover:opacity-100 lg:hover:scale-105'}`}>
         <img src={member.image_url || "https://placehold.co/400"} className="w-full h-full object-cover" alt={member.name} />
       </div>
 
-      {/* INFO BOX (Masqué sur mobile sauf si click, Toujours là sur Desktop) */}
       <div className={`
             mt-4 bg-black/80 backdrop-blur-md border border-orange-900/50 p-4 rounded-lg shadow-2xl
             transition-all duration-500 ease-in-out origin-top
-            /* Mobile/Tablette Logic */
             ${showInfo ? 'opacity-100 max-h-[500px] translate-y-0' : 'opacity-0 max-h-0 translate-y-[-20px] overflow-hidden'}
-            /* Desktop Logic (lg:...) : Toujours visible */
             lg:opacity-100 lg:max-h-[500px] lg:translate-y-0 lg:block
         `}>
         <h3 className="font-display text-lg md:text-xl text-white uppercase leading-none">{member.name}</h3>
@@ -386,7 +346,7 @@ function PageAbout({ onBack, isAdmin }) {
   const [editingMember, setEditingMember] = useState(null);
 
   const fetchMembers = async () => {
-    const { data } = await safeSupabaseCall(() => supabase.from('team_members').select('*').order('id').limit(2));
+    const { data } = await supabase.from('team_members').select('*').order('id').limit(2);
     if (data) setMembers(data);
   };
   useEffect(() => { fetchMembers(); }, []);
@@ -414,10 +374,7 @@ function PageAbout({ onBack, isAdmin }) {
           <h1 className="font-display text-3xl md:text-5xl text-white uppercase mb-4 drop-shadow-lg">L'Escouade <span className="text-orange-500">Alpha</span></h1>
         </div>
 
-        {/* CONTENEUR DES MEMBRES : Centré verticalement autour du feu */}
         <div className="flex-grow flex items-center justify-between w-full pb-20 max-w-5xl mx-auto">
-
-          {/* GAUCHE */}
           <div className="w-1/3 flex justify-start">
             {members[0] && (
               <MemberCard
@@ -429,11 +386,7 @@ function PageAbout({ onBack, isAdmin }) {
               />
             )}
           </div>
-
-          {/* CENTRE (VIDE POUR LE FEU) */}
           <div className="w-1/3"></div>
-
-          {/* DROITE */}
           <div className="w-1/3 flex justify-end">
             {members[1] && (
               <MemberCard
@@ -445,7 +398,6 @@ function PageAbout({ onBack, isAdmin }) {
               />
             )}
           </div>
-
         </div>
       </div>
     </div>
@@ -518,15 +470,7 @@ function EditItemModal({ item, onClose, onSuccess }) {
         const { data } = supabase.storage.from('images-objets').getPublicUrl(fileName);
         publicUrl = data.publicUrl;
       }
-
-      const payload = {
-        nom,
-        description: desc,
-        prix: parseFloat(prix),
-        cagnotte: parseFloat(cagnotte),
-        image_url: publicUrl
-      };
-
+      const payload = { nom, description: desc, prix: parseFloat(prix), cagnotte: parseFloat(cagnotte), image_url: publicUrl };
       if (item?.id) {
         const { error } = await supabase.from('items').update(payload).eq('id', item.id);
         if (error) throw error;
@@ -534,14 +478,9 @@ function EditItemModal({ item, onClose, onSuccess }) {
         const { error } = await supabase.from('items').insert([payload]);
         if (error) throw error;
       }
-
       onSuccess();
       onClose();
-    } catch (error) {
-      alert("Erreur: " + error.message);
-    } finally {
-      setLoading(false);
-    }
+    } catch (error) { alert("Erreur: " + error.message); } finally { setLoading(false); }
   };
 
   return (
@@ -550,12 +489,10 @@ function EditItemModal({ item, onClose, onSuccess }) {
         <button onClick={onClose} className="absolute top-4 right-4 text-survie-grey hover:text-white">✕</button>
         <h2 className="font-display text-2xl text-white mb-6 uppercase tracking-wide border-b border-survie-grey/30 pb-4">{item?.id ? 'Modifier' : 'Nouveau'} Matériel</h2>
         <form onSubmit={handleSubmit} className="space-y-4 text-left">
-
           <div>
             <label className="text-[10px] uppercase text-survie-khaki tracking-widest block mb-1">Nom</label>
             <input type="text" className="w-full bg-survie-card border border-survie-grey/50 p-3 text-white focus:border-survie-khaki outline-none" required value={nom} onChange={e => setNom(e.target.value)} />
           </div>
-
           <div className="flex gap-4">
             <div className="flex-1">
               <label className="text-[10px] uppercase text-survie-khaki tracking-widest block mb-1">Objectif (€)</label>
@@ -566,17 +503,14 @@ function EditItemModal({ item, onClose, onSuccess }) {
               <input type="number" className="w-full bg-survie-card border border-survie-grey/50 p-3 text-white focus:border-survie-khaki outline-none font-bold" required value={cagnotte} onChange={e => setCagnotte(e.target.value)} />
             </div>
           </div>
-
           <div>
             <label className="text-[10px] uppercase text-survie-khaki tracking-widest block mb-1">Photo</label>
             <input type="file" accept="image/*" onChange={e => setFile(e.target.files[0])} className="w-full text-xs text-survie-grey file:bg-survie-khaki file:text-black hover:file:bg-white cursor-pointer" />
           </div>
-
           <div>
             <label className="text-[10px] uppercase text-survie-khaki tracking-widest block mb-1">Description</label>
             <textarea className="w-full bg-survie-card border border-survie-grey/50 p-3 text-white focus:border-survie-khaki outline-none h-24 resize-none" required value={desc} onChange={e => setDesc(e.target.value)} />
           </div>
-
           <button disabled={loading} className="w-full py-4 bg-survie-khaki text-black font-display uppercase tracking-widest text-lg hover:bg-white transition-colors mt-4">{loading ? '...' : 'VALIDER'}</button>
         </form>
       </div>
@@ -680,27 +614,17 @@ const CarteObjet = ({ item, onDonationSuccess, onImageUpdate, onDelete, onEdit, 
   return (
     <div className="h-full w-full group relative bg-survie-card border border-survie-grey/30 p-0 overflow-hidden flex flex-col select-none bg-opacity-100 hover:border-survie-khaki/50 transition-colors">
 
-      {/* BOUTONS ADMIN (EDIT / DELETE) */}
       {isAdmin && (
         <div className="absolute top-2 left-2 z-30 flex gap-2">
-          <button
-            onClick={() => onEdit(item)}
-            className="bg-blue-600/80 hover:bg-blue-600 text-white p-1.5 rounded backdrop-blur-sm transition-colors"
-            title="Modifier"
-          >
+          <button onClick={() => onEdit(item)} className="bg-blue-600/80 hover:bg-blue-600 text-white p-1.5 rounded backdrop-blur-sm transition-colors" title="Modifier">
             <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
           </button>
-          <button
-            onClick={() => onDelete(item.id)}
-            className="bg-red-600/80 hover:bg-red-600 text-white p-1.5 rounded backdrop-blur-sm transition-colors"
-            title="Supprimer"
-          >
+          <button onClick={() => onDelete(item.id)} className="bg-red-600/80 hover:bg-red-600 text-white p-1.5 rounded backdrop-blur-sm transition-colors" title="Supprimer">
             <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"></path></svg>
           </button>
         </div>
       )}
 
-      {/* IMAGE */}
       <div className="h-32 md:h-64 w-full bg-[#0f0f0f] relative flex items-center justify-center overflow-hidden shrink-0 group/image">
         {item.image_url ? (
           <img src={item.image_url} alt={item.nom} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-all duration-700 grayscale group-hover:grayscale-0 pointer-events-none" />
@@ -722,7 +646,6 @@ const CarteObjet = ({ item, onDonationSuccess, onImageUpdate, onDelete, onEdit, 
         )}
       </div>
 
-      {/* INFO */}
       <div className="p-3 md:p-6 flex flex-col flex-grow bg-survie-card">
         <h3 className="font-display text-base md:text-xl mb-1 text-white uppercase tracking-wide truncate">{item.nom}</h3>
 
@@ -739,7 +662,6 @@ const CarteObjet = ({ item, onDonationSuccess, onImageUpdate, onDelete, onEdit, 
             <div className="h-full bg-survie-khaki transition-all duration-1000 ease-out shadow-[0_0_15px_rgba(138,154,91,0.4)]" style={{ width: `${pourcentage}%` }}></div>
           </div>
 
-          {/* ACTIONS */}
           {isCompleted ? (
             <button disabled className="w-full py-2 md:py-3 bg-survie-grey/20 text-survie-grey border border-survie-grey/20 font-display uppercase tracking-widest text-[9px] md:text-xs cursor-not-allowed">Objectif Atteint</button>
           ) : step === 0 ? (
@@ -749,18 +671,7 @@ const CarteObjet = ({ item, onDonationSuccess, onImageUpdate, onDelete, onEdit, 
           ) : step === 1 ? (
             <div className="bg-white/5 p-2 rounded border border-survie-khaki/30 animate-fade-in-up relative z-10">
               <label className="text-[9px] uppercase text-survie-khaki tracking-widest block mb-1 text-center">Montant du don (€)</label>
-
-              <input
-                type="number"
-                min="2"
-                step="1"
-                placeholder="2"
-                autoFocus
-                className="w-full bg-survie-card border border-survie-grey/50 p-2 text-white text-center font-display text-lg focus:border-survie-khaki outline-none mb-3"
-                value={montantDon}
-                onChange={(e) => setMontantDon(e.target.value)}
-              />
-
+              <input type="number" min="2" step="1" placeholder="2" autoFocus className="w-full bg-survie-card border border-survie-grey/50 p-2 text-white text-center font-display text-lg focus:border-survie-khaki outline-none mb-3" value={montantDon} onChange={(e) => setMontantDon(e.target.value)} />
               <button onClick={lancerPaiement} className="w-full py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold uppercase text-[9px] md:text-xs tracking-widest mb-2">Ouvrir PayPal</button>
               <button onClick={() => setStep(0)} className="text-[9px] text-survie-grey w-full text-center hover:text-white uppercase">Annuler</button>
             </div>
@@ -779,13 +690,7 @@ const CarteObjet = ({ item, onDonationSuccess, onImageUpdate, onDelete, onEdit, 
 
 // --- LOGO DELTA ---
 const LogoDelta = ({ onClick }) => (
-  <svg
-    onClick={onClick}
-    className="h-8 w-auto md:h-10 cursor-pointer hover:opacity-80 transition-opacity"
-    viewBox="0 0 100 100"
-    fill="none"
-    xmlns="http://www.w3.org/2000/svg"
-  >
+  <svg onClick={onClick} className="h-8 w-auto md:h-10 cursor-pointer hover:opacity-80 transition-opacity" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
     <path d="M50 10L90 90H10L50 10Z" stroke="#8a9a5b" strokeWidth="3" fill="none" />
     <path d="M50 25L80 85H20L50 25Z" fill="#8a9a5b" fillOpacity="0.2" />
     <line x1="10" y1="90" x2="90" y2="90" stroke="white" strokeWidth="1" strokeDasharray="4 2" />
@@ -799,13 +704,11 @@ export default function App() {
   const [user, setUser] = useState(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [showAuth, setShowAuth] = useState(false);
-
-  // États de Gestion Admin
-  const [editingItem, setEditingItem] = useState(null); // Pour l'item en cours d'édition
+  const [editingItem, setEditingItem] = useState(null);
 
   const [view, setView] = useState('aventure');
   const [nightVision, setNightVision] = useState(false);
-  const [nvgAnimating, setNvgAnimating] = useState(false); // État pour l'animation NVG
+  const [nvgAnimating, setNvgAnimating] = useState(false);
 
   const targetRotation = useRef(0);
   const currentRotation = useRef(0);
@@ -815,56 +718,42 @@ export default function App() {
   const startX = useRef(0);
   const [radius, setRadius] = useState(950);
 
-  // --- AJOUTER CECI POUR L'EFFET DE CLIC ---
+  // Calculs pour la barre globale
+  const totalCagnotte = items.reduce((acc, item) => acc + (item.cagnotte || 0), 0);
+  const totalObjectif = items.reduce((acc, item) => acc + (item.prix || 0), 0);
+  const progressGlobal = totalObjectif > 0 ? (totalCagnotte / totalObjectif) * 100 : 0;
+
   useEffect(() => {
     window.addEventListener('click', createSprayEffect);
     return () => window.removeEventListener('click', createSprayEffect);
   }, []);
 
-  // --- LOGIQUE NVG TOGGLE ---
   const toggleNightVision = () => {
     if (nightVision) {
       setNightVision(false);
     } else {
       setNvgAnimating(true);
-      // On attend le "noir" de l'animation (vers 400ms) pour basculer le mode
-      setTimeout(() => {
-        setNightVision(true);
-      }, 400);
-      // On retire la classe d'animation à la fin (1400ms)
-      setTimeout(() => {
-        setNvgAnimating(false);
-      }, 1400);
+      setTimeout(() => { setNightVision(true); }, 400);
+      setTimeout(() => { setNvgAnimating(false); }, 1400);
     }
   };
 
-  // --- LOGIQUE RAYON ---
   useEffect(() => {
     const calculateRadius = () => {
       const w = window.innerWidth;
       const count = items.length || 1;
       let spacing, minVisualRadius;
-
-      if (w < 768) {
-        spacing = 230;
-        minVisualRadius = 520;
-      } else if (w < 1024) {
-        spacing = 340;
-        minVisualRadius = 750;
-      } else {
-        spacing = 380;
-        minVisualRadius = 1000;
-      }
+      if (w < 768) { spacing = 230; minVisualRadius = 520; }
+      else if (w < 1024) { spacing = 340; minVisualRadius = 750; }
+      else { spacing = 380; minVisualRadius = 1000; }
       const radiusBasedOnCount = (count * spacing) / (2 * Math.PI);
       setRadius(Math.max(minVisualRadius, radiusBasedOnCount));
     };
-
     calculateRadius();
     window.addEventListener('resize', calculateRadius);
     return () => window.removeEventListener('resize', calculateRadius);
   }, [items]);
 
-  // Auth & Admin Check
   useEffect(() => {
     const checkAdmin = async (currentUser) => {
       if (!currentUser?.email) { setIsAdmin(false); return; }
@@ -903,7 +792,6 @@ export default function App() {
 
   const animate = () => {
     if (view !== 'home') return;
-
     currentRotation.current += (targetRotation.current - currentRotation.current) * 0.05;
     if (carouselRef.current) {
       carouselRef.current.style.transform = `translateZ(-${radius}px) rotateY(${currentRotation.current}deg)`;
@@ -966,35 +854,22 @@ export default function App() {
       onTouchMove={view === 'home' ? handleTouchMove : undefined}
       onTouchEnd={view === 'home' ? handleTouchEnd : undefined}
     >
-      {/* OVERLAY D'ANIMATION NVG */}
       <div className={`nvg-transition-overlay ${nvgAnimating ? 'nvg-animating' : ''}`}></div>
 
       {showAuth && <AuthModal onClose={() => setShowAuth(false)} />}
 
-      {/* MODAL EDITION D'ITEM */}
       {editingItem && (
-        <EditItemModal
-          item={editingItem}
-          onClose={() => setEditingItem(null)}
-          onSuccess={fetchItems}
-        />
+        <EditItemModal item={editingItem} onClose={() => setEditingItem(null)} onSuccess={fetchItems} />
       )}
 
-      {/* MODAL CRÉATION */}
       {editingItem === false && (
-        <EditItemModal
-          item={null}
-          onClose={() => setEditingItem(null)}
-          onSuccess={fetchItems}
-        />
+        <EditItemModal item={null} onClose={() => setEditingItem(null)} onSuccess={fetchItems} />
       )}
 
       <header className="fixed w-full z-40 bg-survie-bg/80 backdrop-blur-md border-b border-survie-grey/20 pointer-events-auto">
         <div className="max-w-[95vw] mx-auto px-4 py-3 flex justify-between items-center">
-
           <div className="flex items-center gap-4 md:gap-6">
             <LogoDelta onClick={() => setView('aventure')} />
-
             <nav className="hidden md:flex gap-4">
               <button onClick={() => setView('aventure')} className={`text-xs uppercase tracking-widest hover:text-survie-khaki transition-colors ${view === 'aventure' ? 'text-survie-khaki font-bold' : 'text-survie-grey'}`}>Notre Aventure</button>
               <button onClick={() => setView('home')} className={`text-xs uppercase tracking-widest hover:text-survie-khaki transition-colors ${view === 'home' ? 'text-survie-khaki font-bold' : 'text-survie-grey'}`}>Inventaire</button>
@@ -1003,18 +878,9 @@ export default function App() {
           </div>
 
           <div className="flex items-center gap-3 md:gap-4">
-
-            {/* BOUTON SPLINTER CELL (NVG TOGGLE) */}
-            <button
-              onClick={toggleNightVision}
-              className={`p-2 border rounded-full transition-all group ${nightVision ? 'bg-survie-khaki border-survie-khaki' : 'border-survie-grey hover:border-survie-khaki'}`}
-              title="Vision Nocturne"
-            >
-              {/* Icône Splinter Cell (3 points) */}
+            <button onClick={toggleNightVision} className={`p-2 border rounded-full transition-all group ${nightVision ? 'bg-survie-khaki border-survie-khaki' : 'border-survie-grey hover:border-survie-khaki'}`} title="Vision Nocturne">
               <svg className={`h-4 w-4 ${nightVision ? 'text-black' : 'text-survie-grey group-hover:text-survie-khaki'}`} viewBox="0 0 24 24" fill="currentColor">
-                <circle cx="7" cy="10" r="3" />
-                <circle cx="17" cy="10" r="3" />
-                <circle cx="12" cy="17" r="3" />
+                <circle cx="7" cy="10" r="3" /> <circle cx="17" cy="10" r="3" /> <circle cx="12" cy="17" r="3" />
               </svg>
             </button>
 
@@ -1057,6 +923,29 @@ export default function App() {
               <p className="text-survie-khaki text-[9px] md:text-sm uppercase tracking-[0.2em] md:tracking-[0.3em] mb-1 md:mb-2">Inventaire</p>
               <h2 className="font-display text-3xl md:text-6xl text-white uppercase leading-[0.9]"><span className="text-transparent bg-clip-text bg-gradient-to-r from-survie-khaki to-white">Nos</span> Besoins</h2>
             </div>
+
+            {/* BARRE DE PROGRESSION GLOBALE */}
+            {!loading && items.length > 0 && (
+              <div className="w-full max-w-2xl mx-auto px-6 mb-8 relative z-20 animate-fade-in-up">
+                <div className="flex justify-between items-end mb-2 font-mono text-xs md:text-sm">
+                  <span className="text-survie-khaki tracking-widest">PROGRESSION MISSION</span>
+                  <span className="text-white">{Math.round(progressGlobal)}%</span>
+                </div>
+                <div className="w-full h-3 bg-survie-card border border-survie-grey/50 relative overflow-hidden">
+                  <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 10px, #8a9a5b 10px, #8a9a5b 11px)' }}></div>
+                  <div
+                    className="h-full bg-survie-khaki shadow-[0_0_20px_rgba(138,154,91,0.6)] transition-all duration-1000 ease-out relative"
+                    style={{ width: `${progressGlobal}%` }}
+                  >
+                    <div className="absolute right-0 top-0 bottom-0 w-[1px] bg-white/50"></div>
+                  </div>
+                </div>
+                <div className="flex justify-between mt-1 font-mono text-[10px] text-gray-500">
+                  <span>{totalCagnotte.toLocaleString()} € COLLECTÉS</span>
+                  <span>OBJECTIF: {totalObjectif.toLocaleString()} €</span>
+                </div>
+              </div>
+            )}
 
             {loading ? <div className="text-center text-survie-khaki font-mono animate-pulse z-20">CHARGEMENT...</div> : (
               <div className="scene-3d z-20 mt-2 md:mt-8 relative">
