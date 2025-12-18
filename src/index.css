@@ -1,0 +1,481 @@
+/* 1. TOUT EN HAUT : Les polices Google */
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@200..800&family=Oswald:wght@200..700&display=swap');
+
+/* 2. JUSTE APRÈS : Tailwind */
+@import "tailwindcss";
+
+/* 3. ENSUITE : Le Thème */
+@theme {
+  --color-survie-bg: #0a0a0a;
+  --color-survie-card: #141414;
+  --color-survie-text: #e5e5e5;
+  --color-survie-khaki: #8a9a5b;
+  --color-survie-khaki-dim: #5f6b3e;
+  --color-survie-grey: #333333;
+  --font-display: "Oswald", sans-serif;
+  --font-body: "Manrope", sans-serif;
+  --animate-fade-in-up: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* --- CORRECTION DU SCROLL HORIZONTAL ICI --- */
+html,
+body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  overflow-x: hidden;
+  /* Coupe tout ce qui dépasse horizontalement */
+  background-color: var(--color-survie-bg);
+  color: var(--color-survie-text);
+  font-family: var(--font-body);
+}
+
+#root {
+  width: 100%;
+  overflow-x: hidden;
+  /* Double sécurité sur l'app React */
+}
+
+/* Cache la scrollbar verticale par défaut si tu veux un look épuré */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* --- SCÈNE 3D --- */
+.scene-3d {
+  perspective: 1000px;
+  perspective-origin: 50% 50%;
+  height: 500px;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  /* Important : On empêche le manège de créer du scroll */
+  overflow: visible;
+}
+
+@media (min-width: 768px) {
+  .scene-3d {
+    perspective: 2000px;
+    height: 700px;
+  }
+}
+
+/* --- LE MANÈGE --- */
+.carousel-3d {
+  position: relative;
+  transform-style: preserve-3d;
+  width: 200px;
+  height: 400px;
+}
+
+@media (min-width: 768px) {
+  .carousel-3d {
+    width: 320px;
+    height: 550px;
+  }
+}
+
+.card-container-3d {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  transform-origin: center center;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  will-change: transform, filter;
+  backface-visibility: hidden;
+}
+
+/* ... tout ton code existant ... */
+
+/* --- MODE NIGHT VISION (NVG) --- */
+.mode-nvg {
+  /* Le filtre vert radioactif */
+  filter: sepia(100%) hue-rotate(80deg) saturate(300%) contrast(1.2) brightness(0.9);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Effet de scanlines (lignes horizontales) */
+.mode-nvg::before {
+  content: " ";
+  display: block;
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  background: linear-gradient(to bottom,
+      rgba(18, 16, 16, 0) 50%,
+      rgba(0, 0, 0, 0.25) 50%);
+  background-size: 100% 4px;
+  z-index: 9999;
+  pointer-events: none;
+  /* Important pour pouvoir cliquer au travers */
+}
+
+/* Effet de vignette (coins sombres) */
+.mode-nvg::after {
+  content: " ";
+  display: block;
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  background: radial-gradient(circle,
+      rgba(0, 0, 0, 0) 60%,
+      rgba(0, 0, 0, 0.4) 100%);
+  z-index: 9999;
+  pointer-events: none;
+}
+
+/* ... tout ton code existant ... */
+
+/* --- ANIMATION TRANSITION NVG (Mise des lunettes) --- */
+@keyframes nvg-power-up {
+  0% {
+    background-color: transparent;
+    opacity: 0;
+  }
+
+  10% {
+    background-color: #000;
+    /* Noir total au début */
+    opacity: 1;
+  }
+
+  30% {
+    background-color: #000;
+    opacity: 1;
+  }
+
+  40% {
+    background-color: #afff00;
+    /* Flash vert intense */
+    opacity: 0.8;
+    filter: brightness(2.5) contrast(1.5);
+  }
+
+  100% {
+    background-color: transparent;
+    /* Retour à la transparence (le mode-nvg prend le relais) */
+    opacity: 0;
+  }
+}
+
+/* L'overlay qui va jouer l'animation par-dessus tout le site */
+.nvg-transition-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  /* Au-dessus de absolument tout */
+  pointer-events: none;
+  /* Ne bloque pas les clics quand inactif */
+  opacity: 0;
+}
+
+/* Classe ajoutée temporairement pour déclencher l'anim */
+.nvg-animating {
+  animation: nvg-power-up 1.4s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+  pointer-events: auto;
+  /* Bloque les clics pendant l'animation */
+}
+
+/* ... ton code existant ... */
+
+/* --- SCÈNE FEU DE CAMP 3D --- */
+.campfire-stage {
+  perspective: 1200px;
+  height: 60vh;
+  /* Hauteur de la scène */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+}
+
+/* Le conteneur 3D qui tient tout le monde */
+.campfire-scene {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  /* On pose tout au sol */
+  padding-bottom: 50px;
+}
+
+/* --- LE FEU --- */
+.fire-pit {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%) translateZ(50px);
+  /* Un peu en avant */
+  width: 100px;
+  height: 100px;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  z-index: 10;
+}
+
+/* Les flammes (plusieurs couches) */
+.flame {
+  position: absolute;
+  bottom: 0;
+  width: 60px;
+  height: 60px;
+  background: radial-gradient(ellipse at bottom, #ffdd55 0%, #ff5500 60%, transparent 80%);
+  border-radius: 50% 50% 20% 20% / 60% 60% 40% 40%;
+  filter: blur(5px);
+  animation: flicker 1s infinite alternate ease-in-out;
+  opacity: 0.8;
+  transform-origin: center bottom;
+}
+
+.flame:nth-child(2) {
+  width: 50px;
+  height: 70px;
+  background: radial-gradient(ellipse at bottom, #fff700 0%, #ff2200 60%, transparent 80%);
+  animation-duration: 1.2s;
+  animation-delay: 0.2s;
+}
+
+.flame:nth-child(3) {
+  width: 40px;
+  height: 50px;
+  background: radial-gradient(ellipse at bottom, #ffffff 0%, #ffdd55 50%, transparent 80%);
+  animation-duration: 0.8s;
+  animation-delay: 0.4s;
+  filter: blur(3px);
+}
+
+/* Braises au sol */
+.embers {
+  position: absolute;
+  bottom: -10px;
+  width: 120px;
+  height: 40px;
+  background: radial-gradient(ellipse at center, #ff5500 20%, #441100 80%, transparent 100%);
+  filter: blur(10px);
+  opacity: 0.6;
+  animation: pulse-embers 2s infinite alternate;
+  transform: rotateX(70deg);
+  /* Couché au sol */
+}
+
+/* --- LES MEMBRES EN 3D --- */
+.member-card-3d {
+  width: 280px;
+  position: absolute;
+  bottom: 40px;
+  transition: all 0.5s ease-out;
+  /* L'éclairage du feu sur les cartes */
+  box-shadow: inset 0 0 80px rgba(255, 85, 0, 0.3), 0 10px 30px rgba(0, 0, 0, 0.5);
+  animation: firelight-flicker 3s infinite alternate linear;
+  border: 1px solid rgba(255, 85, 0, 0.2);
+}
+
+/* Position Gauche */
+.member-left {
+  left: 10%;
+  /* Tourné vers le feu à droite */
+  transform: rotateY(25deg) translateZ(0px);
+}
+
+/* Position Droite */
+.member-right {
+  right: 10%;
+  /* Tourné vers le feu à gauche */
+  transform: rotateY(-25deg) translateZ(0px);
+}
+
+/* --- ANIMATIONS --- */
+@keyframes flicker {
+  0% {
+    transform: scale(1.0) skewX(0deg) rotate(0deg);
+    opacity: 0.8;
+  }
+
+  25% {
+    transform: scale(1.05) skewX(2deg) rotate(2deg);
+  }
+
+  50% {
+    transform: scale(0.95) skewX(-2deg) rotate(-1deg);
+    opacity: 0.6;
+  }
+
+  75% {
+    transform: scale(1.1) skewX(1deg) rotate(3deg);
+  }
+
+  100% {
+    transform: scale(1.0) skewX(0deg) rotate(0deg);
+    opacity: 0.9;
+  }
+}
+
+@keyframes pulse-embers {
+  0% {
+    opacity: 0.4;
+    transform: rotateX(70deg) scale(1);
+  }
+
+  100% {
+    opacity: 0.7;
+    transform: rotateX(70deg) scale(1.1);
+  }
+}
+
+/* Animation de la lumière orange sur les cartes */
+@keyframes firelight-flicker {
+
+  0%,
+  100% {
+    box-shadow: inset 0 0 80px rgba(255, 85, 0, 0.2), 0 10px 30px rgba(0, 0, 0, 0.5);
+    border-color: rgba(255, 85, 0, 0.1);
+  }
+
+  33% {
+    box-shadow: inset 0 0 100px rgba(255, 120, 0, 0.35), 0 10px 30px rgba(0, 0, 0, 0.6);
+    border-color: rgba(255, 120, 0, 0.3);
+  }
+
+  66% {
+    box-shadow: inset 0 0 60px rgba(255, 60, 0, 0.25), 0 10px 30px rgba(0, 0, 0, 0.4);
+    border-color: rgba(255, 60, 0, 0.2);
+  }
+}
+
+/* Ajustement mobile */
+@media (max-width: 768px) {
+  .campfire-stage {
+    height: auto;
+    min-height: 50vh;
+    padding-top: 50px;
+  }
+
+  .campfire-scene {
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 30px;
+    transform: none;
+  }
+
+  .fire-pit {
+    position: relative;
+    bottom: auto;
+    left: auto;
+    transform: none;
+    margin-bottom: -20px;
+    z-index: 0;
+  }
+
+  .member-card-3d {
+    position: relative;
+    width: 90%;
+    bottom: auto;
+    left: auto;
+    right: auto;
+    transform: none !important;
+    /* On désactive la 3D sur mobile pour empiler */
+  }
+
+  .embers {
+    width: 80px;
+  }
+}
+
+/* ... à la fin de ton fichier index.css ... */
+
+/* --- EFFET SPRAY AU CLIC --- */
+/* ... à la fin de src/index.css ... */
+
+/* --- EFFET TRAITS (BURST) SOBRE --- */
+/* ... à la fin de src/index.css ... */
+
+/* --- EFFET TRAITS DISCRETS (DÉTAIL) --- */
+.spray-particle {
+  position: fixed;
+  pointer-events: none;
+  z-index: 9999;
+
+  /* Style ultra-fin */
+  height: 1px;
+  /* Épaisseur minimale */
+  background-color: #8a9a5b;
+  /* Khaki */
+  opacity: 0.7;
+  /* Pas totalement opaque pour la sobriété */
+  border-radius: 0;
+  box-shadow: none;
+  /* Pas de glow, trop voyant */
+
+  transform-origin: left center;
+  /* Part du centre vers l'extérieur */
+
+  /* Animation rapide et sèche */
+  animation: line-burst-discrete 0.3s ease-out forwards;
+}
+
+@keyframes line-burst-discrete {
+  0% {
+    opacity: 0.8;
+    width: 0px;
+    transform: translate(-50%, -50%) rotate(var(--angle)) translateX(0);
+  }
+
+  40% {
+    opacity: 1;
+    width: var(--length);
+    /* S'allonge brièvement */
+  }
+
+  100% {
+    opacity: 0;
+    width: 0px;
+    /* Disparaît en rétrécissant */
+    /* Distance réduite */
+    transform: translate(-50%, -50%) rotate(var(--angle)) translateX(var(--dist));
+  }
+}
+
+/* Animation Scanline pour le Drone HUD */
+@keyframes scan {
+  0% {
+    top: -10%;
+  }
+
+  100% {
+    top: 110%;
+  }
+}
+
+.animate-scan {
+  animation: scan 3s linear infinite;
+}
