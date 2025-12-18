@@ -3,7 +3,7 @@ import { supabase } from './supabaseClient';
 import Campfire3D from './Campfire3D';
 
 // --- CONFIGURATION ---
-const PAYPAL_ME_USER = "CQRDN";
+const PAYPAL_ME_USER = "CeQuilResteraDeNous";
 const DISCORD_LINK = "https://discord.gg/q3fkRmHmZu";
 
 // --- COMPOSANT UTILITAIRE : IMAGE ÉDITABLE ---
