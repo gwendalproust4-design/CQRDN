@@ -123,7 +123,88 @@ const createSprayEffect = (e) => {
 // 2. MODALES & ÉLÉMENTS UI "PRO"
 // ==========================================
 
-// --- MENU MOBILE TACTIQUE (NEW) ---
+// --- ADMIN DASHBOARD (VALIDATION DONS) ---
+function AdminDashboard({ onClose }) {
+  const [pending, setPending] = useState([]);
+  const [itemsMap, setItemsMap] = useState({});
+
+  const fetchPending = async () => {
+    // Récupère les dons en attente
+    const { data } = await supabase
+      .from('pending_donations')
+      .select('*')
+      .eq('status', 'pending')
+      .order('created_at', { ascending: false });
+
+    if (data) setPending(data);
+
+    // Récupère les noms des items pour l'affichage
+    const { data: items } = await supabase.from('items').select('id, nom');
+    if (items) {
+      const map = {};
+      items.forEach(i => map[i.id] = i.nom);
+      setItemsMap(map);
+    }
+  };
+
+  useEffect(() => { fetchPending(); }, []);
+
+  const handleApprove = async (id) => {
+    // Appel de la fonction SQL sécurisée
+    const { error } = await supabase.rpc('approve_donation', { donation_id: id });
+    if (error) alert("Erreur validation: " + error.message);
+    else {
+      alert("Don validé et ajouté à la cagnotte !");
+      fetchPending();
+    }
+  };
+
+  const handleReject = async (id) => {
+    if (!window.confirm("Rejeter ce don ?")) return;
+    const { error } = await supabase.from('pending_donations').update({ status: 'rejected' }).eq('id', id);
+    if (!error) fetchPending();
+  };
+
+  return (
+    <div className="fixed inset-0 z-[200] bg-black/95 flex flex-col items-center justify-center p-6 animate-fade-in-up">
+      <div className="w-full max-w-3xl bg-survie-bg border border-survie-khaki p-6 relative">
+        <button onClick={onClose} className="absolute top-4 right-4 text-white hover:text-red-500 font-bold">FERMER [X]</button>
+        <h2 className="text-2xl text-survie-khaki font-display mb-6 uppercase tracking-widest border-b border-survie-grey/30 pb-4">
+          Centre de Commandement - Dons en Attente
+        </h2>
+
+        {pending.length === 0 ? (
+          <div className="text-gray-500 font-mono text-center py-10 flex flex-col items-center gap-4">
+            <span className="text-4xl">✓</span>
+            <span>R.A.S - Aucun don à vérifier pour le moment.</span>
+          </div>
+        ) : (
+          <div className="space-y-4 max-h-[60vh] overflow-y-auto custom-scrollbar pr-2">
+            {pending.map(don => (
+              <div key={don.id} className="flex flex-col md:flex-row justify-between items-start md:items-center bg-black/40 border border-survie-grey/30 p-4 gap-4">
+                <div>
+                  <div className="text-white font-bold text-xl">{don.amount} € <span className="text-xs font-normal text-gray-400">par {don.donor_name}</span></div>
+                  <div className="text-xs text-survie-khaki font-mono mt-1">CIBLE : {itemsMap[don.item_id] || 'Item Inconnu'}</div>
+                  <div className="text-[10px] text-gray-500 mt-1">{new Date(don.created_at).toLocaleString()}</div>
+                </div>
+                <div className="flex gap-3 w-full md:w-auto">
+                  <button onClick={() => handleApprove(don.id)} className="flex-1 md:flex-none bg-green-600/20 border border-green-600 hover:bg-green-600 text-green-500 hover:text-white px-4 py-2 text-xs font-bold uppercase transition-all">
+                    VALIDER
+                  </button>
+                  <button onClick={() => handleReject(don.id)} className="flex-1 md:flex-none bg-red-600/20 border border-red-600 hover:bg-red-600 text-red-500 hover:text-white px-4 py-2 text-xs font-bold uppercase transition-all">
+                    REJETER
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// --- MENU MOBILE TACTIQUE ---
 const MobileMenu = ({ isOpen, onClose, setView, currentView }) => {
   if (!isOpen) return null;
 
@@ -141,15 +222,12 @@ const MobileMenu = ({ isOpen, onClose, setView, currentView }) => {
 
   return (
     <div className="fixed inset-0 z-[200] bg-black/95 backdrop-blur-xl flex flex-col animate-fade-in-up">
-      {/* Header Menu */}
       <div className="flex justify-between items-center p-6 border-b border-survie-grey/20">
         <span className="text-survie-khaki text-xs font-mono tracking-widest animate-pulse">SYSTEM MENU // OPEN</span>
         <button onClick={onClose} className="text-white border border-survie-grey/50 px-4 py-2 text-xs font-bold uppercase hover:bg-survie-khaki hover:text-black transition-all">
           Fermer [X]
         </button>
       </div>
-
-      {/* Liens */}
       <div className="flex-grow flex flex-col justify-center px-8 gap-8">
         {links.map((link, index) => (
           <button
@@ -168,16 +246,10 @@ const MobileMenu = ({ isOpen, onClose, setView, currentView }) => {
           </button>
         ))}
       </div>
-
-      {/* Footer Menu */}
       <div className="p-6 border-t border-survie-grey/20">
         <div className="flex justify-between items-end">
-          <div className="text-[10px] text-gray-500 font-mono">
-            SECURE CONNECTION<br />V.1.0.4 MOBILE
-          </div>
-          <div className="w-12 h-12 border border-survie-khaki/30 flex items-center justify-center">
-            <div className="w-8 h-8 border-t-2 border-l-2 border-survie-khaki animate-spin"></div>
-          </div>
+          <div className="text-[10px] text-gray-500 font-mono">SECURE CONNECTION<br />V.1.0.4 MOBILE</div>
+          <div className="w-12 h-12 border border-survie-khaki/30 flex items-center justify-center"><div className="w-8 h-8 border-t-2 border-l-2 border-survie-khaki animate-spin"></div></div>
         </div>
       </div>
     </div>
@@ -190,7 +262,6 @@ const LegalModal = ({ onClose }) => (
     <div className="max-w-xl w-full bg-survie-bg border border-survie-khaki p-6 relative shadow-[0_0_50px_rgba(138,154,91,0.1)]" onClick={e => e.stopPropagation()}>
       <button onClick={onClose} className="absolute top-4 right-4 text-survie-grey hover:text-white">✕</button>
       <h2 className="font-display text-xl text-white mb-6 uppercase border-b border-survie-grey/30 pb-2">Mentions Légales</h2>
-
       <div className="space-y-4 text-[10px] md:text-xs text-gray-400 font-mono text-justify leading-relaxed h-64 overflow-y-auto pr-2">
         <p><strong>1. ÉDITEUR :</strong> Ce site est un projet personnel à but non lucratif visant à financer le matériel pour le projet "CQRDN".</p>
         <p><strong>2. FLUX FINANCIERS :</strong> Les dons sont traités exclusivement via PayPal. Aucune donnée bancaire ne transite par ce site.</p>
@@ -198,10 +269,7 @@ const LegalModal = ({ onClose }) => (
         <p><strong>4. HÉBERGEMENT :</strong> Site hébergé par Vercel Inc. / Base de données par Supabase.</p>
         <p><strong>5. COOKIES :</strong> Ce site utilise uniquement des cookies techniques nécessaires au fonctionnement (session).</p>
       </div>
-
-      <button onClick={onClose} className="w-full mt-6 py-3 bg-survie-khaki text-black font-bold uppercase tracking-widest text-xs hover:bg-white transition-colors">
-        Fermer le dossier
-      </button>
+      <button onClick={onClose} className="w-full mt-6 py-3 bg-survie-khaki text-black font-bold uppercase tracking-widest text-xs hover:bg-white transition-colors">Fermer le dossier</button>
     </div>
   </div>
 );
@@ -210,17 +278,10 @@ const LegalModal = ({ onClose }) => (
 const Footer = ({ onOpenLegal }) => (
   <footer className="w-full border-t border-survie-grey/20 bg-black/80 backdrop-blur-sm py-6 mt-auto relative z-30 pointer-events-auto">
     <div className="max-w-[95vw] mx-auto px-4 flex flex-col md:flex-row justify-between items-center gap-4 text-[9px] md:text-[10px] font-mono text-survie-grey uppercase tracking-widest">
-      <div className="opacity-60">
-        © 2025 CQRDN OPS. TACTICAL FUNDING.
-      </div>
+      <div className="opacity-60">© 2025 CQRDN OPS. TACTICAL FUNDING.</div>
       <div className="flex gap-6 items-center">
-        <button onClick={onOpenLegal} className="hover:text-survie-khaki transition-colors border-b border-transparent hover:border-survie-khaki">
-          MENTIONS LÉGALES
-        </button>
-        <a href={DISCORD_LINK} target="_blank" rel="noreferrer" className="hover:text-survie-khaki transition-colors flex items-center gap-2">
-          <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span>
-          STATUS: ONLINE
-        </a>
+        <button onClick={onOpenLegal} className="hover:text-survie-khaki transition-colors border-b border-transparent hover:border-survie-khaki">MENTIONS LÉGALES</button>
+        <a href={DISCORD_LINK} target="_blank" rel="noreferrer" className="hover:text-survie-khaki transition-colors flex items-center gap-2"><span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span>STATUS: ONLINE</a>
       </div>
     </div>
   </footer>
@@ -576,7 +637,6 @@ function PageAbout({ onBack, isAdmin }) {
   const [members, setMembers] = useState([]);
   const [editingMember, setEditingMember] = useState(null);
 
-  // LIENS SOCIAUX DURS (Basé sur l'ordre : 0 = Mathis/FKRaitro, 1 = Sofoxi)
   const socialLinks = [
     {
       instagram: "https://www.instagram.com/mathis.terriot/",
@@ -623,7 +683,6 @@ function PageAbout({ onBack, isAdmin }) {
 function MemberCard({ member, socials, align, isAdmin, onEdit, onDelete }) {
   const [showInfo, setShowInfo] = useState(false);
 
-  // Icones SVG Minimalistes
   const icons = {
     instagram: <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" className="w-3 h-3"><rect x="2" y="2" width="20" height="20" rx="5" ry="5" strokeWidth="2"></rect><path d="M16 11.37A4 4 0 1112.63 8 4 4 0 0116 11.37z" strokeWidth="2"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5" strokeWidth="2"></line></svg>,
     tiktok: <svg fill="currentColor" viewBox="0 0 24 24" className="w-3 h-3"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z"></path></svg>,
@@ -647,7 +706,6 @@ function MemberCard({ member, socials, align, isAdmin, onEdit, onDelete }) {
         <p className="text-orange-500 text-[10px] md:text-xs uppercase tracking-widest mb-2 mt-1">{member.role}</p>
         <p className="text-gray-300 text-xs font-light leading-relaxed mb-4">{member.description}</p>
 
-        {/* RÉSEAUX SOCIAUX */}
         <div className={`flex gap-3 pt-3 border-t border-orange-900/30 ${align === 'right' ? 'justify-end' : 'justify-start'}`}>
           {socials && Object.entries(socials).map(([platform, url]) => (
             <a
@@ -668,7 +726,7 @@ function MemberCard({ member, socials, align, isAdmin, onEdit, onDelete }) {
 }
 
 // --- CARTE OBJET (3D) ---
-const CarteObjet = ({ item, onDonationSuccess, onImageUpdate, onDelete, onEdit, isAdmin, user, openAuth }) => {
+const CarteObjet = ({ item, onDonationSuccess, onDelete, onEdit, isAdmin, user, openAuth }) => {
   const pourcentage = Math.min((item.cagnotte / item.prix) * 100, 100);
   const isCompleted = pourcentage >= 100;
   const [step, setStep] = useState(0);
@@ -677,9 +735,37 @@ const CarteObjet = ({ item, onDonationSuccess, onImageUpdate, onDelete, onEdit, 
   const fileInputRef = useRef(null);
 
   const handleContributeClick = () => { if (!user) { openAuth(); } else { setStep(1); } };
-  const lancerPaiement = () => { const montant = parseFloat(montantDon); if (!montant || montant < 2) { alert("Le montant minimum est de 2€."); return; } const url = `https://www.paypal.com/paypalme/${PAYPAL_ME_USER}/${montant}EUR`; window.open(url, '_blank'); setStep(2); };
-  const confirmerDon = () => { onDonationSuccess(item.id, parseFloat(montantDon)); setStep(0); setMontantDon(""); };
-  const handleImageUpload = async (event) => { if (!isAdmin) return; try { setUploading(true); const file = event.target.files[0]; if (!file) return; const fileExt = file.name.split('.').pop(); const fileName = `${item.id}-${Math.random().toString(36).substring(2)}.${fileExt}`; const { error: uploadError } = await supabase.storage.from('images-objets').upload(fileName, file); if (uploadError) throw uploadError; const { data: { publicUrl } } = supabase.storage.from('images-objets').getPublicUrl(fileName); const { error: updateError } = await supabase.from('items').update({ image_url: publicUrl }).eq('id', item.id); if (updateError) throw updateError; onImageUpdate(); alert("Image mise à jour."); } catch (error) { alert("Erreur: " + error.message); } finally { setUploading(false); } };
+
+  const lancerPaiement = () => {
+    const montant = parseFloat(montantDon);
+    if (!montant || montant < 2) { alert("Le montant minimum est de 2€."); return; }
+    const url = `https://www.paypal.com/paypalme/${PAYPAL_ME_USER}/${montant}EUR`;
+    window.open(url, '_blank');
+    setStep(2);
+  };
+
+  // --- MODIFICATION ICI : ENVOI VERS PENDING_DONATIONS ---
+  const confirmerDon = async () => {
+    const montant = parseFloat(montantDon);
+    if (!montant) return;
+
+    try {
+      const { error } = await supabase.from('pending_donations').insert([
+        { item_id: item.id, amount: montant, status: 'pending' }
+      ]);
+
+      if (error) throw error;
+
+      alert("Merci ! Votre don a été transmis au QG. Il sera ajouté à la cagnotte après validation par un administrateur.");
+      setStep(0);
+      setMontantDon("");
+    } catch (err) {
+      alert("Erreur transmission: " + err.message);
+    }
+  };
+  // -------------------------------------------------------
+
+  const handleImageUpload = async (event) => { if (!isAdmin) return; try { setUploading(true); const file = event.target.files[0]; if (!file) return; const fileExt = file.name.split('.').pop(); const fileName = `${item.id}-${Math.random().toString(36).substring(2)}.${fileExt}`; const { error: uploadError } = await supabase.storage.from('images-objets').upload(fileName, file); if (uploadError) throw uploadError; const { data: { publicUrl } } = supabase.storage.from('images-objets').getPublicUrl(fileName); const { error: updateError } = await supabase.from('items').update({ image_url: publicUrl }).eq('id', item.id); if (updateError) throw updateError; onDonationSuccess(); alert("Image mise à jour."); } catch (error) { alert("Erreur: " + error.message); } finally { setUploading(false); } };
 
   return (
     <div className="h-full w-full group relative bg-survie-card border border-survie-grey/30 p-0 overflow-hidden flex flex-col select-none bg-opacity-100 hover:border-survie-khaki/50 transition-colors">
@@ -696,7 +782,7 @@ const CarteObjet = ({ item, onDonationSuccess, onImageUpdate, onDelete, onEdit, 
       <div className="h-32 md:h-64 w-full bg-[#0f0f0f] relative flex items-center justify-center overflow-hidden shrink-0 group/image">
         {item.image_url ? (<img src={item.image_url} alt={item.nom} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-all duration-700 grayscale group-hover:grayscale-0 pointer-events-none" />) : (<div className="text-survie-grey border-2 border-dashed border-survie-grey/20 p-8 rounded"><span className="font-display text-4xl opacity-20">IMG</span></div>)}
         <div className="absolute top-2 right-2 md:top-4 md:right-4 bg-survie-bg/90 backdrop-blur border border-survie-grey/50 px-2 py-0.5 md:px-3 md:py-1 text-[9px] md:text-xs font-bold tracking-widest text-survie-khaki uppercase">{item.prix} €</div>
-        {isAdmin && (<div className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:image:opacity-100 transition-opacity duration-300 pointer-events-auto cursor-pointer" onClick={() => fileInputRef.current?.click()}><span className="text-white text-xs uppercase font-bold tracking-widest border border-white px-3 py-1 hover:bg-white hover:text-black transition-colors">{uploading ? '...' : '📷 Admin'}</span><input type="file" ref={fileInputRef} onChange={handleImageUpload} accept="image/*" className="hidden" /></div>)}
+        {isAdmin && (<div className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover/image:opacity-100 transition-opacity duration-300 pointer-events-auto cursor-pointer" onClick={() => fileInputRef.current?.click()}><span className="text-white text-xs uppercase font-bold tracking-widest border border-white px-3 py-1 hover:bg-white hover:text-black transition-colors">{uploading ? '...' : '📷 Admin'}</span><input type="file" ref={fileInputRef} onChange={handleImageUpload} accept="image/*" className="hidden" /></div>)}
       </div>
       <div className="p-3 md:p-6 flex flex-col flex-grow bg-survie-card">
         <h3 className="font-display text-base md:text-xl mb-1 text-white uppercase tracking-wide truncate">{item.nom}</h3>
@@ -733,8 +819,9 @@ export default function App() {
   const [editingItem, setEditingItem] = useState(null);
   const [showLegal, setShowLegal] = useState(false);
 
-  // --- NOUVEAU STATE : MENU MOBILE ---
+  // --- NOUVEAUX STATES ---
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [showAdminPanel, setShowAdminPanel] = useState(false);
 
   const [view, setView] = useState('aventure');
   const [nightVision, setNightVision] = useState(false);
@@ -806,11 +893,6 @@ export default function App() {
     setLoading(false);
   };
   useEffect(() => { fetchItems(); }, []);
-
-  const handleDonation = async (id, amount) => {
-    const { error } = await supabase.rpc('ajouter_don', { item_id: id, montant_don: amount });
-    if (!error) { fetchItems(); alert(`Don de ${amount}€ enregistré.`); }
-  };
 
   const handleDeleteItem = async (id) => {
     if (!window.confirm("Êtes-vous sûr de vouloir supprimer cet équipement ? Cette action est irréversible.")) return;
@@ -897,6 +979,9 @@ export default function App() {
         currentView={view}
       />
 
+      {/* DASHBOARD ADMIN */}
+      {showAdminPanel && <AdminDashboard onClose={() => setShowAdminPanel(false)} />}
+
       {editingItem && <EditItemModal item={editingItem} onClose={() => setEditingItem(null)} onSuccess={fetchItems} />}
       {editingItem === false && <EditItemModal item={null} onClose={() => setEditingItem(null)} onSuccess={fetchItems} />}
 
@@ -940,7 +1025,12 @@ export default function App() {
                   <div className="text-[10px] text-survie-khaki uppercase tracking-widest">{isAdmin ? 'CMD' : 'OP'}</div>
                 </div>
                 {isAdmin && (
-                  <button onClick={() => setEditingItem(false)} className="px-2 py-1 md:px-4 md:py-2 border border-survie-khaki bg-survie-khaki/10 text-survie-khaki text-[10px] md:text-xs uppercase hover:bg-survie-khaki hover:text-black transition-colors font-bold">+ </button>
+                  <>
+                    <button onClick={() => setShowAdminPanel(true)} className="px-2 py-1 md:px-4 md:py-2 border border-yellow-500 text-yellow-500 text-[10px] md:text-xs uppercase hover:bg-yellow-500 hover:text-black transition-colors font-bold animate-pulse">
+                      ⚠️ DONS
+                    </button>
+                    <button onClick={() => setEditingItem(false)} className="px-2 py-1 md:px-4 md:py-2 border border-survie-khaki bg-survie-khaki/10 text-survie-khaki text-[10px] md:text-xs uppercase hover:bg-survie-khaki hover:text-black transition-colors font-bold">+ </button>
+                  </>
                 )}
                 <button onClick={() => supabase.auth.signOut()} className="px-2 py-1 md:px-4 md:py-2 border border-survie-grey/50 text-[10px] md:text-xs uppercase hover:text-red-500 text-survie-grey bg-survie-card">Exit</button>
               </div>
@@ -995,7 +1085,7 @@ export default function App() {
                 <div ref={carouselRef} className="carousel-3d">
                   {items.map((item, index) => (
                     <div key={item.id} className="card-container-3d" style={{ transform: `rotateY(${index * anglePerItem}deg) translateZ(${radius}px)` }}>
-                      <CarteObjet item={item} onDonationSuccess={handleDonation} onImageUpdate={fetchItems} onDelete={handleDeleteItem} onEdit={(i) => setEditingItem(i)} user={user} isAdmin={isAdmin} openAuth={() => setShowAuth(true)} />
+                      <CarteObjet item={item} onDonationSuccess={fetchItems} onDelete={handleDeleteItem} onEdit={(i) => setEditingItem(i)} user={user} isAdmin={isAdmin} openAuth={() => setShowAuth(true)} />
                     </div>
                   ))}
                 </div>
